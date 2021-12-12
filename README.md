@@ -20,15 +20,16 @@ Datasets which are not marked for backup and without backed up  descendants will
 
 ## Create backup folder structure and mount snapshots to it
 
-*snapshot.json* contains all info required to work with backup folder structure. To pace it you will need [Jq](https://github.com/stedolan/jq) tool. It is usually packaged for distro.
+*snapshot.json* contains all info required to work with backup folder structure. You will need [Jq](https://github.com/stedolan/jq) tool to parse it. It is usually packaged for distro.
 
 ```
 jq -rS '.return[].mount' snapshot.json | jq -r '.[]'
 ```
 will output shell script to create backup folders and mount snapshots to them and also create some useful files.
 Examine the output, and if you dire pipe it to root shell for execution
+
 **!! Piping anything to root shell is dangerous !!**
-No attempts was made to sanitise input. Anyone who can set names of datasets you are trying to backup can harm your system. Trying to backup dataset named *tank/hello";rm -rf /;"* will wipe your system. Be careful, backing up dataset received via *zfs send|receive" open your system to exploit from sending end if you use this script.
+No attempts was made to sanitise input. Anyone who can set names of datasets you are trying to backup can harm your system. Trying to backup dataset named *tank/hello";rm -rf /;"* will wipe your system. Be careful, backing up dataset received via *zfs send|receive" opens your system to exploits from sending end if you use this script.
 
 After shell is completed you should get all your snapshots mounted under *backup_root*.
 Snapshot which need to be backed up will be mounted under *backup_root/dataset_guid/data*. where *dataset_guid* is guid of dataset(not snapshot) to be backed up.
@@ -38,9 +39,9 @@ as example:
 ```
 why guid in the path? It is unique, does not change and guarantee that it will be no clashes  
 
-Also 3 files will be created in *backup_root/dataset_guid/* for all dataset including not backup parents of backed up datasets.
-* *dataset_guid/properties.json* - listed all local properties of the dataset. Just do be used by your script if required
-* *dataset_guid/before_restore.sh* - shell script to create mount directory and dataset and set zfs properties with exception of "mountpoint". It will do it at same path and pool as directory created for backup. Please do not try to use it as is. It may be not what you want.
+Also 3 files will be created in *backup_root/dataset_guid/* for **all** dataset including not backup parents of backed up datasets.
+* *dataset_guid/properties.json* - listed all local properties of the dataset. Just to be used by your script if required.
+* *dataset_guid/before_restore.sh* - shell script to create mount directory, dataset itself and set zfs properties with exception of "mountpoint". It will do it at same path and pool as directory created for backup. Please do not try to use it as is. It may be not what you want. This is why *properties.json* is there.
 * *dataset_guid/after_restore.sh* - shell script to unmount dataset, destroy directory and set "mountpoint" on dataset to how it was during backup.
 
 # Backup it
